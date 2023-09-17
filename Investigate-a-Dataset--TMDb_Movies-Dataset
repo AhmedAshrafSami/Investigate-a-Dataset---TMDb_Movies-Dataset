@@ -1,0 +1,153 @@
+import pandas as pd
+import numpy as np
+import csv
+from datetime import datetime
+import matplotlib.pyplot as plt
+% matplotlib inline
+
+#Data Wrangling
+
+df=pd.read_csv('tmdb-movies.csv')
+df.head()
+df.info()
+df.describe()
+
+#Data Cleaning
+
+df1=df.fillna(0)
+
+%config IPCompleter.greedy=True
+
+sum(df1.duplicated())
+
+df1.drop_duplicates(inplace=True)
+
+df1.drop(['imdb_id','homepage','tagline','overview','budget_adj','revenue_adj'],axis =1,inplace = True)
+df1['release_date']=pd.to_datetime(df1['release_date'])
+df1['release_date'].head()
+
+#Exploratory Data Analysis
+#Question 1
+
+import seaborn as sns
+data=df1.groupby('release_year').count()['id']
+
+data.plot(xticks = np.arange(1960,2016,5))
+sns.set(rc={'figure.figsize':(14,5)})
+plt.title("Year Vs Number Of Movies",fontsize = 14)
+plt.xlabel('Release year',fontsize = 13)
+plt.ylabel('Number Of Movies',fontsize = 13)
+
+sns.set_style("whitegrid")
+#2014 year has the highest release of movies (700) followed by year 2013 (659) and year 2015 (629).
+
+#Question 2
+
+number_of_release=df1['release_date'].dt.month.value_counts().sort_index()
+number_of_release
+months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+number_of_release = pd.DataFrame(number_of_release)
+number_of_release['month'] = months
+number_of_release.rename(columns = {'release_date':'number_of_release'},inplace=True)
+
+number_of_release.plot(x='month',kind='bar',fontsize = 11,figsize=(8,6))
+plt.title('Months vs Number Of Movie Releases',fontsize = 15)
+plt.xlabel('Month',fontsize = 13)
+plt.ylabel('Number of movie releases',fontsize = 13)
+
+#there are higher number of release in september and october
+
+#Question 3
+
+def data(x):
+    data_plot = df[x].str.cat(sep = '|')
+    data = pd.Series(data_plot.split('|'))
+    info = data.value_counts(ascending=False)
+    return info
+total_genre_movies = data('genres')
+print(total_genre_movies)
+
+total_genre_movies.plot(kind= 'bar',figsize = (13,8),fontsize=12)
+plt.title("Genre With Highest Release",fontsize=15)
+plt.xlabel('Number Of Movies',fontsize=13)
+plt.ylabel("Genres",fontsize= 13)
+
+#Drama(4761) genre has the highest release of movies followed by Comedy(3793) and Thriller(2908)
+
+#Question 4
+
+count_actor_flims = data('cast')
+
+count_actor_flims.iloc[:20].plot.bar(figsize=(15,6),colormap= 'tab20c',fontsize=12)
+
+plt.title("Most Frequent Actor",fontsize=15)
+plt.xticks(rotation = 70)
+plt.xlabel('Actor',fontsize=13)
+plt.ylabel("Number Of Movies",fontsize= 13)
+sns.set_style("whitegrid")
+
+#robert de niro is the most prefered actor for the people.
+
+#Question 5
+
+def find_minmax(x):
+    min_index = df1[x].idxmin()
+    high_index = df1[x].idxmax()
+    high = pd.DataFrame(df1.loc[high_index,:])
+    low = pd.DataFrame(df1.loc[min_index,:])
+    
+    print("Movie Has Highest "+ x + " : ",df1['original_title'][high_index])
+    print("Movie Has Lowest "+ x + "  : ",df1['original_title'][min_index])
+    return pd.concat([high,low],axis = 1)
+find_minmax('revenue')
+
+info = pd.DataFrame(df1['revenue'].sort_values(ascending = False))
+info['original_title'] = df1['original_title']
+data = list(map(str,(info['original_title'])))
+
+x = list(data[:10])
+y = list(info['revenue'][:10])
+
+ax= sns.barplot(x=y,y=x)
+sns.set(rc={'figure.figsize':(12,5)})
+ax.set_title("Top 10 High Revenue Movies",fontsize = 20)
+ax.set_xlabel("Revenue",fontsize = 13)
+ax.set_ylabel("movie",fontsize = 13)
+
+sns.set_style("darkgrid")
+
+#Avatar movie earn the highest profit with 2.5B And the most in loss movie in this dataset is The Warrior's Way.
+
+#Question6
+
+df1['budget'] = df1['budget'].replace(0,np.NAN)
+find_minmax('budget')
+info = pd.DataFrame(df1['budget'].sort_values(ascending = False))
+info['original_title'] = df1['original_title']
+data = list(map(str,(info['original_title'])))
+
+x = list(data[:10])
+y = list(info['budget'][:10])
+
+ax = sns.barplot(x=y,y=x)
+sns.set(rc={'figure.figsize':(12,5)})
+ax.set_title("Top 10 High Budget Movies",fontsize = 15)
+ax.set_xlabel("Budget",fontsize = 13)
+ax.set_ylabel("movie",fontsize = 13)
+sns.set_style("darkgrid")
+
+#Highest budget is The Warrior's Way and the Lowest budget is Fear Clinic
+
+#Conclusions
+
+
+#1-2014 has the highest release of movies (700) followed by year 2013 (659) and year 2015 (629).
+
+#2-the higher number of release in september and october.
+
+#3-Drame, Comedy, Thriller and Action are four most-made genres.
+
+#4-'Avatar' movie earn the highest profit in all And the most in loss movie is The Warrior's Way.
+
+#5-the Movie Which Has Highest budget is The Warrior's Way and the Movie Which Has Lowest budget is Fear Clinic
+
